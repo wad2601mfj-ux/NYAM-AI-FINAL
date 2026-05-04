@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Admin - Live Portal</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --primary-hover: #d97706;
+            --secondary: #3b82f6;
+            --bg-gradient: linear-gradient(45deg, #1e3a8a, #3b82f6, #93c5fd, #60a5fa, #2563eb);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --border-color: #cbd5e1;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientSwipe 12s ease infinite;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        @keyframes gradientSwipe {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Navbar */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .seller-identity {
+            font-weight: 600;
+            background: #f1f5f9;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .seller-identity:hover {
+            background: #e2e8f0;
+        }
+
+        /* Container Layout */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid white;
+        }
+
+        h2.section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Form Grid */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        input,
+        select {
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+            background: white;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+        }
+
+        .btn-main {
+            background: var(--primary);
+            color: white;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-main:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        /* File Upload */
+        .file-upload {
+            border: 2px dashed var(--border-color);
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            background: #f8fafc;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .file-upload:hover {
+            border-color: var(--secondary);
+            background: #eff6ff;
+        }
+
+        .preview-box {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .preview-item {
+            flex: 1;
+            height: 150px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .preview-item img,
+        .preview-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Tables & Lists */
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background: #f8fafc;
+            padding: 15px;
+            text-align: left;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .badge.heavy {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge.snack {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+
+        .badge.drink {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge.desert {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .btn-icon-small {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-edit {
+            background: #3b82f6;
+        }
+
+        .btn-edit:hover {
+            background: #2563eb;
+        }
+
+        .btn-del {
+            background: #ef4444;
+        }
+
+        .btn-del:hover {
+            background: #dc2626;
+        }
+
+        /* Live Orders */
+        .order-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Float Chat Button removed - Embedded instead */
+        .chat-window {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            overflow: hidden;
+            border: 1px solid white;
+            height: 500px;
+            flex-direction: row;
+            width: 100%;
+        }
+
+
+        .chat-sidebar {
+            width: 240px;
+            background: #f8fafc;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-sidebar-header {
+            padding: 15px;
+            font-weight: 700;
+            border-bottom: 1px solid var(--border-color);
+            background: white;
+        }
+
+        .buyer-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .buyer-item {
+            padding: 12px;
+            border-radius: 12px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .buyer-item:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .buyer-item.active {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .unread-badge {
+            background: #ef4444;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: auto;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+            animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes badgePop {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .activity-item {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .activity-info {
+            flex: 1;
+        }
+
+        .activity-user {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #1e293b;
+        }
+
+        .activity-text {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .activity-time {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .chat-main-header {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .chat-msgs-area {
+            flex: 1;
+            padding: 20px;
+            background: #fbfbfb;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        @keyframes bubblePop {
+            0% {
+                transform: scale(0.6) translateY(15px);
+                opacity: 0;
+            }
+
+            85% {
+                transform: scale(1.03) translateY(-3px);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            animation: bubblePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform-origin: bottom center;
+        }
+
+        .bubble-seller {
+            align-self: flex-end;
+            background: var(--secondary);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+        }
+
+        .bubble-buyer {
+            align-self: flex-start;
+            background: #e2e8f0;
+            color: #1e293b;
+            border-bottom-left-radius: 4px;
+        }
+
+        .bubble-meta {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-bottom: 4px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        /* Ensure address text in seller panel is dark and readable */
+        .bubble-buyer small,
+        .bubble-buyer i {
+            color: #475569 !important;
+            font-weight: 600;
+        }
+
+        .chat-input-bar {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input-bar input {
+            flex: 1;
+            border-radius: 20px;
+            padding: 10px 15px;
+            border: 1px solid #cbd5e1;
+            outline: none;
+            transition: 0.3s;
+            background: #f8fafc;
+        }
+
+        .chat-input-bar input:focus {
+            border-color: var(--secondary);
+            background: white;
+        }
+
+        .send-chat-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .send-chat-btn:hover {
+            background: #2563eb;
+            transform: scale(1.05);
+        }
+
+        .offer-action-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+
+        .offer-action-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        /* Modals */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 250;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            color: #64748b;
+            transition: 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #0f172a;
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        /* Custom Tabs for Send Offer */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f1f5f9;
+            padding: 6px;
+            border-radius: 12px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #64748b;
+            transition: 0.2s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="header">
+        <div class="brand"><i class="fas fa-store-alt"></i> SellerAdmin</div>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <div id="notifStatus" style="font-size: 0.8rem; color: #10b981; display:none;"><i class="fas fa-bell"></i>
+                Live</div>
+            <div class="seller-identity" onclick="showActivityLog()" title="Activity Log"
+                style="background:var(--secondary); color:white;">
+                <i class="fas fa-clipboard-list"></i> Activity
+            </div>
+            <div class="seller-identity" onclick="promptStoreName()">
+                <i class="fas fa-user-circle"></i> <span id="storeNameDisplay">Not Set</span>
+            </div>
+            <div class="seller-identity" onclick="logout()" style="background:#ef4444; color:white;">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+        </div>
+    </header>
+
+    <div id="toastContainer" style="position:fixed; top:80px; right:20px; z-index:9999; pointer-events:none;"></div>
+    <!-- Improved Sound: Using a clearer notification sound -->
+    <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"
+        preload="auto"></audio>
+
+    <div class="container">
+
+        <!-- Main Chat Portal -->
+        <h2 class="section-title" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.2);"><i
+                class="fas fa-comments"></i> Live Buyer Requests</h2>
+        <div class="chat-window" id="chatWin">
+            <!-- Sidebar: Buyers -->
+            <div class="chat-sidebar">
+                <div class="chat-sidebar-header">
+                    Chats & Requests
+                </div>
+                <div class="buyer-list" id="buyerList">
+                    <div style="text-align:center; padding:10px; color:#aaa;">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Main: Chat Messages -->
+            <div class="chat-main" id="chatMainBox" style="display: none;">
+                <div class="chat-main-header">
+                    <span><i class="fas fa-user-circle"></i> <span id="activeBuyerName">Buyer</span></span>
+                    <div style="display:flex; gap:10px;">
+                        <button class="offer-action-btn" onclick="openOfferModal()"
+                            style="font-size:1rem; padding: 10px 20px;"><i class="fas fa-gift"></i> Send Offer (Catalog
+                            / Manual)</button>
+                    </div>
+                </div>
+                <div class="chat-msgs-area" id="msgArea"></div>
+                <div class="chat-input-bar">
+                    <button class="offer-action-btn" title="Send all products to this buyer" onclick="sendFullCatalog()"
+                        style="background: #6366f1; white-space: nowrap;">
+                        <i class="fas fa-boxes"></i> Send Full Catalog
+                    </button>
+                    <input type="text" id="chatInput" placeholder="Type a message or offer to buyer..."
+                        onkeypress="if(event.key==='Enter') sendChat()">
+                    <button class="send-chat-btn" onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+
+            <div id="chatPlaceholder"
+                style="flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#94a3b8; background:white;">
+                <i class="fas fa-comment-dots fa-4x mb-3" style="margin-bottom:15px;"></i>
+                <p>Chat requests will appear on the left.</p>
+                <p style="margin-top:10px; font-weight:bold; color: #1e293b;">Select a buyer to start chatting and
+                    access the "Send Offer" button!</p>
+            </div>
+        </div>
+
+        <!-- Live Orders Panel -->
+        <div class="card"
+            style="border-top: 4px solid #3b82f6; background: linear-gradient(to bottom, #ffffff, #f0f9ff);">
+            <h2 class="section-title"><i class="fas fa-store text-blue-500"></i> Store Orders Panel
+                <span id="ordersBadge"
+                    style="background:#ef4444; color:white; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; display:none;">Live</span>
+            </h2>
+            <p style="margin-top:-10px; margin-bottom:15px; font-size:0.85rem; color:#64748b;">Monitoring all sub-vendor
+                incoming orders in real-time.</p>
+            <div id="ordersList" style="max-height: 300px; overflow-y: auto;">
+                <div style="text-align:center; padding: 20px; color: var(--text-muted);"><i
+                        class="fas fa-spinner fa-spin"></i> Fetching live orders...</div>
+            </div>
+        </div>
+
+        <!-- Buyers Activity Panel -->
+        <div class="card" style="border-top: 4px solid var(--secondary); background: #fff;">
+            <h2 class="section-title"><i class="fas fa-bolt text-amber-500"></i> Buyers Activity</h2>
+            <p style="margin-top:-10px; margin-bottom:15px; font-size:0.85rem; color:#64748b;">Track real-time actions from buyers interested in your products.</p>
+            <div id="activityListContainer" style="max-height: 400px; overflow-y: auto;">
+                <div style="text-align:center; padding: 30px; color: #94a3b8;">
+                    <i class="fas fa-walking fa-2x mb-2" style="display:block;"></i>
+                    No activity detected yet.
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Product Panel -->
+        <div class="card">
+            <h2 class="section-title"><i class="fas fa-box"></i> Manage Catalog</h2>
+            <input type="hidden" id="editId">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" id="sItem" placeholder="e.g. Spicy Chicken Rice">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="sCategory">
+                        <option value="Heavy Meal">Heavy Meal</option>
+                        <option value="Light Snack">Light Snack</option>
+                        <option value="Beverage">Beverage</option>
+                        <option value="Dessert">Dessert</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Base Price (Rp)</label>
+                    <input type="number" id="sBasePrice" placeholder="e.g. 25000">
+                </div>
+                <div class="form-group">
+                    <label>Discount (%)</label>
+                    <input type="number" id="sDiscount" placeholder="Optional. e.g. 10">
+                </div>
+
+                <!-- Media Uploads -->
+                <div class="form-group full" style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                    <div>
+                        <label>Image Upload</label>
+                        <div class="file-upload" onclick="document.getElementById('sImgInput').click()"><i
+                                class="fas fa-image"></i> Select Image</div>
+                        <input type="file" id="sImgInput" accept="image/*" style="display:none;" onchange="handleImg()">
+                        <input type="hidden" id="sImgB64">
+                    </div>
+                    <div>
+                        <label>Video (Optional, Cloudinary)</label>
+                        <div class="file-upload" onclick="document.getElementById('sVidInput').click()"><i
+                                class="fas fa-video"></i> Select Video</div>
+                        <input type="file" id="sVidInput" accept="video/mp4" style="display:none;"
+                            onchange="handleVid()">
+                    </div>
+                </div>
+
+                <!-- Preview -->
+                <div class="form-group full preview-box">
+                    <div class="preview-item" id="pImgBox"><img id="pImgSrc"></div>
+                    <div class="preview-item" id="pVidBox"><video id="pVidSrc" controls></video></div>
+                </div>
+
+                <div class="form-group full">
+                    <button class="btn-main" id="btnSave" onclick="saveProduct()"><i class="fas fa-save"></i> Save
+                        Product to Catalog</button>
+                    <button class="btn-main" id="btnCancel" onclick="resetForm()"
+                        style="background: #64748b; display:none; margin-top: 10px;"><i class="fas fa-times"></i> Cancel
+                        Edit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Catalog List -->
+        <div class="card">
+            <h2 class="section-title"><i class="fas fa-list"></i> Your Active Catalog</h2>
+            <div class="table-wrap">
+                <table id="catalogTable">
+                    <thead>
+                        <tr>
+                            <th width="80">Media</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th width="100">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="catalogBody">
+                        <tr>
+                            <td colspan="5" align="center"><i class="fas fa-spinner fa-spin"></i> Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Send Offer Modal -->
+    <div class="overlay" id="offerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span><i class="fas fa-gift"></i> Send Offer to Buyer</span>
+                <i class="fas fa-times modal-close" onclick="closeModal('offerModal')"></i>
+            </div>
+
+            <div class="modal-body">
+                <div class="tabs">
+                    <button class="tab-btn active" id="tabCatalog" onclick="switchOfferTab('catalog')">From
+                        Catalog</button>
+                    <button class="tab-btn" id="tabManual" onclick="switchOfferTab('manual')">Manual Input</button>
+                </div>
+
+                <!-- Catalog Mode -->
+                <div id="viewCatalog">
+                    <div class="form-group">
+                        <label>Select Product from your Catalog</label>
+                        <select id="offerSelect" style="width:100%;">
+                            <option value="">-- Choose an item --</option>
+                        </select>
+                    </div>
+                    <div style="margin-top:20px; font-size:0.9rem; color:#64748b;">
+                        The full product details including images and variations will be sent to the buyer's Live Offer
+                        panel!
+                    </div>
+                </div>
+
+                <!-- Manual Mode -->
+                <div id="viewManual" style="display: none;">
+                    <div class="form-group">
+                        <label>Custom Item Name</label>
+                        <input type="text" id="manualItemName" placeholder="e.g. Special Extra Spicy Noodles">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="manualCategory">
+                            <option value="Heavy Meal">Heavy Meal</option>
+                            <option value="Light Snack">Light Snack</option>
+                            <option value="Beverage">Beverage</option>
+                            <option value="Dessert">Dessert</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Offer Price (Rp)</label>
+                        <input type="number" id="manualPrice" placeholder="e.g. 50000">
+                    </div>
+                    <div style="margin-top:10px; font-size:0.85rem; color:#64748b;">
+                        Manual offers will use AI-generated images based on the category on the buyer's side.
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-main" onclick="executeSendOffer()"><i class="fas fa-paper-plane"></i> Send to
+                    Buyer</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Activity Log Modal -->
+    <div class="overlay" id="activityModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span><i class="fas fa-clipboard-list"></i> Seller Activity Log</span>
+                <i class="fas fa-times modal-close" onclick="closeModal('activityModal')"></i>
+            </div>
+            <div class="modal-body" id="activityList"></div>
+        </div>
+    </div>
+
+
+    <script>
+        // ========== HELPER FUNCTIONS ==========
+        function formatCurrency(n) {
+            if (n === null || n === undefined || isNaN(n)) return "0";
+            return Number(n).toLocaleString();
+        }
+
+        // ========== SUPABASE CONFIG ==========
+        const supabaseUrl = 'https://zgtqdtrqlqqehjxnwjcr.supabase.co'; // Dari screenshot
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpndHFkdHJxbHFxZWhqeG53amNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMDc0OTUsImV4cCI6MjA5Mjc4MzQ5NX0.qPrtTdd0YnezenZR4EBYfn6LidpYQP6xzLOP880c7wE'; // Memakai Legacy Key asli Anda
+        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // ========== ACTIVITY TRACKER ==========
+        const ActivityTracker = {
+            log: function (action) {
+                let history = JSON.parse(localStorage.getItem('sellerActivityLog')) || [];
+                history.unshift({ action: action, time: new Date().toISOString() });
+                if (history.length > 50) history.pop();
+                localStorage.setItem('sellerActivityLog', JSON.stringify(history));
+            },
+            getLogs: function () {
+                return JSON.parse(localStorage.getItem('sellerActivityLog')) || [];
+            }
+        };
+
+        // ========== CORE STATE ==========
+        let storeName = localStorage.getItem('wadStoreName');
+        let myProducts = [];
+        let currentBuyer = null;
+        let videoFile = null;
+
+        const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dhdhpy0lu/video/upload';
+        const CLOUDINARY_PRESET = 'Malvin_DatabaseForWAD';
+
+        // ========== INITIALIZATION ==========
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log("System Initializing...");
+
+            // 1. Initialize Store Name first
+            initStore();
+
+            // 2. Setup other features in background
+            setTimeout(() => {
+                setupGlobalChatListener();
+                loadBuyersInitial(); // Load buyer chat list
+            }, 1000);
+
+            // Manual fallback indicator
+            setTimeout(() => {
+                const listEl = document.getElementById('ordersList');
+                if (listEl && listEl.innerHTML.includes('Fetching live orders')) {
+                    console.warn("Orders still fetching after 4s. Showing retry manual.");
+                    listEl.innerHTML = `
+                        <div style="text-align:center; padding:20px;">
+                            <p style="color:#64748b; font-size:0.9rem; margin-bottom:10px;">Connection taking longer than usual...</p>
+                            <button onclick="location.reload()" style="background:#3b82f6; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer;">
+                                <i class="fas fa-sync"></i> Refresh Page
+                            </button>
+                        </div>`;
+                }
+            }, 5000);
+        });
+
+        function initStore() {
+            // Re-fetch from localStorage just in case
+            if (!storeName) storeName = localStorage.getItem('wadStoreName');
+
+            if (!storeName) {
+                promptStoreName();
+            } else {
+                updateStoreNameDisplay();
+                listenToMyProducts();
+                listenToOrders();
+                listenToBuyerActivities();
+            }
+
+            console.log("Seller Store Name:", storeName);
+        }
+
+        function showToast(title, body) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                background: white; border-left: 5px solid var(--secondary);
+                padding: 15px; border-radius: 12px; margin-bottom: 10px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                min-width: 250px; transform: translateX(120%);
+                transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                pointer-events: auto; cursor: pointer;
+            `;
+            toast.innerHTML = `
+                <div style="font-weight:800; color:var(--secondary); font-size:0.9rem;">${title}</div>
+                <div style="font-size:0.85rem; color:var(--text-main); margin-top:3px;">${body}</div>
+            `;
+            container.appendChild(toast);
+
+            // Sound Fix: Reset audio to start then play
+            const sfx = document.getElementById('notifSound');
+            if (sfx) {
+                sfx.pause();
+                sfx.currentTime = 0;
+                sfx.play().catch(e => console.log("Audio play blocked: interaction needed. ", e));
+            }
+
+            setTimeout(() => { toast.style.transform = 'translateX(0)'; }, 100);
+            setTimeout(() => {
+                toast.style.transform = 'translateX(120%)';
+                setTimeout(() => toast.remove(), 500);
+            }, 5000);
+
+            toast.onclick = () => toast.remove();
+        }
+
+        function setupGlobalChatListener() {
+            document.getElementById('notifStatus').style.display = 'block';
+            supabaseClient.channel('global-chat')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chats' }, payload => {
+                    const m = payload.new;
+                    if (m.sender === 'buyer') {
+                        showToast(`New Message from ${m.buyerId}`, m.message.substring(0, 50) + '...');
+                        // Also refresh buyer list to show new people
+                        loadBuyersInitial();
+                    }
+                })
+                .subscribe();
+        }
+
+        function promptStoreName() {
+            const sn = prompt("Please enter your Store Name to proceed:", storeName || "My Restaurant");
+            if (sn) {
+                const oldName = storeName;
+                storeName = sn;
+                localStorage.setItem('wadStoreName', storeName);
+
+                let ls = JSON.parse(localStorage.getItem('sellerLoginStatus')) || {};
+                ls.isLoggedIn = true;
+                ls.lastLogin = new Date().toISOString();
+                localStorage.setItem('sellerLoginStatus', JSON.stringify(ls));
+
+                ActivityTracker.log(`Logged in / changed store name to: ${storeName}`);
+
+                updateStoreNameDisplay();
+                listenToMyProducts();
+                listenToOrders();
+                listenToBuyerActivities();
+            }
+        }
+        function updateStoreNameDisplay() { document.getElementById('storeNameDisplay').innerText = storeName; }
+
+        function logout() {
+            if (confirm("Logout will clear your seller session identity. Catalog and orders in Supabase are safe. Log in with the same store name to reclaim. Proceed?")) {
+                ActivityTracker.log(`Seller logged out: ${storeName}`);
+                localStorage.removeItem('wadStoreName');
+                localStorage.removeItem('sellerLoginStatus');
+                location.reload();
+            }
+        }
+
+        function showActivityLog() {
+            document.getElementById('activityModal').style.display = 'flex';
+            const list = document.getElementById('activityList');
+            const logs = ActivityTracker.getLogs();
+            if (logs.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color:var(--text-muted);">No activity recorded yet.</div>';
+                return;
+            }
+            let h = '';
+            logs.forEach(l => {
+                let d = "Unknown Time";
+                try {
+                    if (l.time) d = new Date(l.time).toLocaleString();
+                } catch (e) { }
+                h += `
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:10px;">
+                        <div style="font-weight:600; color:#1e293b;">${l.action}</div>
+                        <div style="font-size:0.8rem; color:#64748b; margin-top:5px;"><i class="fas fa-clock"></i> ${d}</div>
+                    </div>
+                `;
+            });
+            list.innerHTML = h;
+        }
+
+        // ========== CATALOG MANAGEMENT ==========
+        function handleImg() {
+            const file = document.getElementById('sImgInput').files[0];
+            if (!file) return;
+            const r = new FileReader(); r.readAsDataURL(file);
+            r.onload = e => {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 400; canvas.height = img.height * (400 / img.width);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const b64 = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('sImgB64').value = b64;
+                    document.getElementById('pImgSrc').src = b64;
+                    document.getElementById('pImgBox').style.display = 'block';
+                }
+            }
+        }
+
+        function handleVid() {
+            const file = document.getElementById('sVidInput').files[0];
+            if (!file) return;
+            if (file.size > 50 * 1024 * 1024) return alert("Video too large! Max 50MB.");
+            videoFile = file;
+            document.getElementById('pVidSrc').src = URL.createObjectURL(file);
+            document.getElementById('pVidBox').style.display = 'block';
+        }
+
+        async function saveProduct() {
+            const id = document.getElementById('editId').value;
+            const item = document.getElementById('sItem').value.trim();
+            const cat = document.getElementById('sCategory').value;
+            const price = parseInt(document.getElementById('sBasePrice').value);
+            const discount = parseInt(document.getElementById('sDiscount').value) || 0;
+            const img = document.getElementById('sImgB64').value;
+
+            if (!item || !price) return alert("Item Name and Base Price are required.");
+
+            const btn = document.getElementById('btnSave');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            try {
+                let vidUrl = null;
+                if (videoFile) {
+                    const fd = new FormData();
+                    fd.append('file', videoFile);
+                    fd.append('upload_preset', CLOUDINARY_PRESET);
+                    const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
+                    const j = await res.json();
+                    if (j.secure_url) vidUrl = j.secure_url;
+                }
+
+                const itemsList = [item];
+                const data = {
+                    sellerName: storeName,
+                    items: itemsList,
+                    category: cat,
+                    basePrice: price,
+                    discount: discount
+                };
+                if (img) data.imageUrl = img;
+                if (vidUrl) data.videoUrl = vidUrl;
+
+                let res;
+                if (id) {
+                    res = await supabaseClient.from('products').update(data).eq('id', id);
+                } else {
+                    res = await supabaseClient.from('products').insert([data]);
+                }
+
+                if (res.error) throw res.error;
+
+                ActivityTracker.log(`Saved product to catalog: ${item} (Rp ${price})`);
+
+                alert("Product saved to catalog!");
+                resetForm();
+
+            } catch (e) {
+                alert("Error saving: " + e.message);
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Product to Catalog';
+                btn.disabled = false;
+            }
+        }
+
+        async function renderProducts() {
+            const tbody = document.getElementById('catalogBody');
+            if (myProducts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" align="center">No products found.</td></tr>`;
+                return;
+            }
+            let h = '';
+            myProducts.forEach(d => {
+                let catBadge = 'heavy';
+                if (d.category === 'Light Snack') catBadge = 'snack';
+                if (d.category === 'Beverage') catBadge = 'drink';
+                if (d.category === 'Dessert') catBadge = 'desert';
+
+                const media = d.imageUrl ? `<img src="${d.imageUrl}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">` : '-';
+
+                const pr = `Rp ${d.basePrice.toLocaleString()}` + (d.discount ? ` <small style="color:red">(-${d.discount}%)</small>` : '');
+
+                h += `
+                    <tr>
+                        <td>${media}</td>
+                        <td style="font-weight:600;">${d.items[0]} <br><small style="color:gray"><i class="fas fa-user"></i> ${d.sellerName}</small></td>
+                        <td><span class="badge ${catBadge}">${d.category}</span></td>
+                        <td>${pr}</td>
+                        <td>
+                            <button class="btn-icon-small btn-edit" onclick="editProduct('${d.id}')" style="margin-right: 12px;"><i class="fas fa-edit"></i></button>
+                            <button class="btn-icon-small btn-del" onclick="delProduct('${d.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = h;
+        }
+
+        async function listenToMyProducts() {
+            if (!storeName) return;
+            const { data } = await supabaseClient.from("products").select('*').eq('sellerName', storeName).order("timestamp", { ascending: false });
+            if (data) myProducts = data;
+            renderProducts();
+
+            supabaseClient.channel('products-room')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `sellerName=eq.${storeName}` }, async () => {
+                    const { data: refreshed } = await supabaseClient.from("products").select('*').eq('sellerName', storeName).order("timestamp", { ascending: false });
+                    if (refreshed) {
+                        myProducts = refreshed;
+                        renderProducts();
+                    }
+                })
+                .subscribe();
+        }
+
+        async function delProduct(id) {
+            if (confirm("Delete this product?")) {
+                const p = myProducts.find(x => x.id === id);
+                if (p) ActivityTracker.log(`Deleted product: ${p.items[0]}`);
+                await supabaseClient.from("products").delete().eq("id", id);
+            }
+        }
+
+        function editProduct(id) {
+            const p = myProducts.find(x => x.id === id);
+            if (!p) return;
+
+            // Scroll smoothly to form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            document.getElementById('editId').value = p.id;
+            document.getElementById('sItem').value = p.items[0];
+            document.getElementById('sCategory').value = p.category;
+            document.getElementById('sBasePrice').value = p.basePrice;
+            document.getElementById('sDiscount').value = p.discount || '';
+
+            if (p.imageUrl) {
+                document.getElementById('sImgB64').value = p.imageUrl;
+                document.getElementById('pImgSrc').src = p.imageUrl;
+                document.getElementById('pImgBox').style.display = 'block';
+            } else {
+                document.getElementById('sImgB64').value = '';
+                document.getElementById('pImgBox').style.display = 'none';
+            }
+
+            if (p.videoUrl) {
+                document.getElementById('pVidSrc').src = p.videoUrl;
+                document.getElementById('pVidBox').style.display = 'block';
+            } else {
+                document.getElementById('pVidSrc').src = '';
+                document.getElementById('pVidBox').style.display = 'none';
+            }
+
+            document.getElementById('btnSave').innerHTML = '<i class="fas fa-save"></i> Update Product Catalog';
+            document.getElementById('btnCancel').style.display = 'inline-flex';
+        }
+
+        function resetForm() {
+            document.getElementById('editId').value = '';
+            document.getElementById('sItem').value = '';
+            document.getElementById('sBasePrice').value = '';
+            document.getElementById('sDiscount').value = '';
+            document.getElementById('sImgInput').value = '';
+            document.getElementById('sImgB64').value = '';
+            document.getElementById('pImgBox').style.display = 'none';
+            document.getElementById('sVidInput').value = '';
+            document.getElementById('pVidBox').style.display = 'none';
+            videoFile = null;
+            document.getElementById('btnSave').innerHTML = '<i class="fas fa-save"></i> Save Product to Catalog';
+            document.getElementById('btnSave').disabled = false;
+            document.getElementById('btnCancel').style.display = 'none';
+        }
+
+
+
+        // ========== LIVE ORDERS ==========
+        let myOrders = [];
+        function renderOrders() {
+            const list = document.getElementById('ordersList');
+            if (!list) return;
+
+            if (myOrders.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-muted);">No orders yet.</div>`;
+                return;
+            }
+
+            // ── Group by same checkout session (same time + buyer) ──
+            const groups = {};
+            myOrders.forEach(o => {
+                // Key: timestamp + buyerName + buyerPhone (unique per checkout)
+                const key = `${o.time || 'unknown'}__${o.buyerName || ''}__${o.buyerPhone || ''}`;
+                if (!groups[key]) {
+                    groups[key] = {
+                        time: o.time,
+                        buyerName: o.buyerName,
+                        buyerPhone: o.buyerPhone,
+                        address: o.address,
+                        paymentMethod: o.paymentMethod,
+                        rating: o.rating,
+                        items: []
+                    };
+                }
+                groups[key].items.push(o);
+                // Use highest rating if multiple
+                if (o.rating && (!groups[key].rating || o.rating > groups[key].rating)) {
+                    groups[key].rating = o.rating;
+                }
+            });
+
+            // Sort groups newest first
+            const sortedGroups = Object.values(groups).sort((a, b) => {
+                return new Date(b.time || 0) - new Date(a.time || 0);
+            });
+
+            let h = '';
+            sortedGroups.forEach(g => {
+                let timeStr = 'Just now';
+                try { if (g.time) timeStr = new Date(g.time).toLocaleString(); } catch (e) { }
+
+                const ratingInfo = g.rating
+                    ? `<div style="margin-top:8px; color:#fbbf24; font-weight:600; font-size:0.85rem;"><i class="fas fa-star"></i> Buyer Rating: ${g.rating}/5</div>`
+                    : '';
+
+                // Build item rows
+                let itemsHtml = '';
+                let groupTotal = 0;
+                const sellers = new Set();
+                g.items.forEach(it => {
+                    groupTotal += (it.total || 0);
+                    sellers.add(it.seller || 'Unknown');
+                    itemsHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px dashed #f1f5f9;">
+                            <span style="font-weight:600; font-size:0.95rem;">
+                                <i class="fas fa-shopping-basket" style="color:#3b82f6;"></i>
+                                ${it.quantity}x ${it.item}
+                                <span style="background:#eff6ff; color:#1d4ed8; padding:1px 7px; border-radius:5px; font-size:0.75rem; margin-left:6px;">
+                                    ${it.seller || 'Vendor'}
+                                </span>
+                            </span>
+                            <span style="color:#10b981; font-weight:700; white-space:nowrap;">Rp ${formatCurrency(it.total)}</span>
+                        </div>`;
+                });
+
+                h += `
+                    <div class="order-item" style="border-left:4px solid #3b82f6; margin-bottom:15px; background:white; padding:15px; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <!-- Header: Buyer Info -->
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                            <div>
+                                <div style="font-weight:700; font-size:1rem; color:#1e293b;">
+                                    <i class="fas fa-user"></i> ${g.buyerName || '-'}
+                                    <span style="font-size:0.75rem; color:#64748b; font-weight:400; margin-left:6px;">
+                                        <i class="fas fa-phone"></i> ${g.buyerPhone || '-'}
+                                    </span>
+                                </div>
+                                <div style="font-size:0.8rem; color:#64748b; margin-top:3px;">
+                                    <i class="fas fa-map-marker-alt"></i> ${g.address || '-'}
+                                </div>
+                            </div>
+                            <div style="text-align:right; flex-shrink:0; margin-left:12px;">
+                                <div style="font-size:0.7rem; color:#94a3b8;"><i class="fas fa-clock"></i> ${timeStr}</div>
+                                <div style="font-size:0.75rem; font-weight:600; color:#1d4ed8; margin-top:2px;">${g.paymentMethod || ''}</div>
+                            </div>
+                        </div>
+
+                        <!-- Item List -->
+                        <div style="margin-bottom:8px;">${itemsHtml}</div>
+
+                        <!-- Grand Total -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px;">
+                            <span style="font-size:0.8rem; color:#64748b;">${g.items.length} item(s) · ${sellers.size} vendor</span>
+                            <span style="font-weight:800; font-size:1.05rem; color:#10b981;">Total: Rp ${formatCurrency(groupTotal)}</span>
+                        </div>
+                        ${ratingInfo}
+                    </div>`;
+            });
+            list.innerHTML = h;
+        }
+
+        let orderUnsub = null;
+        async function listenToOrders() {
+            if (orderUnsub) {
+                await supabaseClient.removeChannel(orderUnsub);
+                orderUnsub = null;
+            }
+            console.log("ListenToOrders triggered...");
+            const listEl = document.getElementById('ordersList');
+            if (!listEl) return;
+
+            if (!storeName) {
+                listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">Please login with your Store Name first.</div>';
+                return;
+            }
+
+            listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;"><i class="fas fa-wifi fa-spin"></i> Connecting to Store Database...</div>';
+
+            try {
+                // Fetch All Orders for this Seller
+                const { data, error } = await supabaseClient
+                    .from('orders')
+                    .select('*')
+                    .eq('seller', storeName)
+                    .order('time', { ascending: false });
+
+                if (error) {
+                    console.error("SUPABASE ERROR:", error);
+                    listEl.innerHTML = `<div style="padding:20px; text-align:center; color:#ef4444; background:#fef2f2; border-radius:12px;">
+                        <i class="fas fa-exclamation-circle fa-2x"></i><br>
+                        <b>Internal Connection Error</b><br>
+                        <small>${error.message}</small>
+                    </div>`;
+                    return;
+                }
+
+                console.log("Data fetched:", data.length, "rows");
+                myOrders = data || [];
+                renderOrders();
+
+                // Start Realtime Subscription
+                orderUnsub = supabaseClient.channel('store-orders')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `seller=eq.${storeName}` }, async (payload) => {
+                        console.log("Realtime Change detected!", payload.eventType);
+
+                        // 🔔 Show notification only on new orders (INSERT)
+                        if (payload.eventType === 'INSERT' && payload.new) {
+                            const newOrder = payload.new;
+                            showToast(
+                                `🛒 New Order from ${newOrder.buyerName || 'Customer'}!`,
+                                `${newOrder.quantity}x ${newOrder.item} — Rp ${formatCurrency(newOrder.total)}`
+                            );
+                            // Play "Ding" notification sound
+                            try {
+                                const ding = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                                ding.volume = 0.7;
+                                ding.play().catch(() => { });
+                            } catch (e) { }
+
+                            // Flash the orders badge
+                            const badge = document.getElementById('ordersBadge');
+                            if (badge) {
+                                badge.style.display = 'inline';
+                                badge.innerText = '🔴 New!';
+                                setTimeout(() => { badge.innerText = 'Live'; }, 4000);
+                            }
+                        }
+
+                        // Directly refresh data WITHOUT calling listenToOrders() again
+                        const { data: refreshed } = await supabaseClient
+                            .from('orders')
+                            .select('*')
+                            .eq('seller', storeName)
+                            .order('time', { ascending: false });
+                        if (refreshed) {
+                            myOrders = refreshed;
+                            renderOrders();
+                        }
+                    });
+                
+                orderUnsub.subscribe();
+
+            } catch (err) {
+                console.error("FATAL SCRIPT ERROR:", err);
+                listEl.innerHTML = `<div style="padding:20px; text-align:center; color:#ef4444;">Script Error: ${err.message}</div>`;
+            }
+        }
+
+
+        // ========== CHAT & SEND OFFER PORTAL ==========
+        function toggleChat() {
+            // Function no longer needed since chat is embedded
+        }
+
+        async function renderBuyers(buyersSet) {
+            const list = document.getElementById('buyerList');
+            list.innerHTML = '';
+            if (buyersSet.size === 0) list.innerHTML = `<div style="padding:15px; color:#aaa;">No chats active.</div>`;
+
+            buyersSet.forEach(b => {
+                const div = document.createElement('div');
+                div.className = 'buyer-item';
+                if (b === currentBuyer) div.classList.add('active');
+                
+                const unread = unreadMessages[b] || 0;
+                const badgeHtml = unread > 0 ? `<span class="unread-badge">${unread}</span>` : '';
+                
+                div.innerHTML = `<i class="fas fa-user-circle"></i> <span>${b}</span> ${badgeHtml}`;
+                div.onclick = () => selectBuyer(b);
+                list.appendChild(div);
+            });
+        }
+
+        let unreadMessages = {}; // { buyerId: count }
+
+        async function loadBuyersInitial() {
+            const list = document.getElementById('buyerList');
+            try {
+                if (list) list.innerHTML = `<div style="padding:15px; color:#aaa;"><i class="fas fa-spinner fa-spin"></i> Loading buyers...</div>`;
+
+                const { data, error } = await supabaseClient.from('chats').select('buyerId').order('timestamp', { ascending: false });
+
+                if (error) {
+                    console.error("Load Buyers Error:", error);
+                    if (list) list.innerHTML = `<div style="padding:10px; font-size:0.7rem; color:#ef4444;">Error: ${error.message}</div>`;
+                    return;
+                }
+
+                const buyersSet = new Set();
+                if (data) data.forEach(doc => buyersSet.add(doc.buyerId));
+                renderBuyers(buyersSet);
+
+                supabaseClient.channel('chats-room-global')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chats' }, async (payload) => {
+                        const m = payload.new;
+                        // If message is from a buyer and it's not the current active chat, mark as unread
+                        if (m.sender === 'buyer' && m.buyerId !== currentBuyer) {
+                            unreadMessages[m.buyerId] = (unreadMessages[m.buyerId] || 0) + 1;
+                            
+                            // Play subtle pop sound
+                            try {
+                                const pop = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+                                pop.volume = 0.3;
+                                pop.play().catch(() => {});
+                            } catch(e) {}
+                        }
+
+                        const { data: refreshed } = await supabaseClient.from('chats').select('buyerId').order('timestamp', { ascending: false });
+                        const newSet = new Set();
+                        if (refreshed) refreshed.forEach(doc => newSet.add(doc.buyerId));
+                        renderBuyers(newSet);
+                    })
+                    .subscribe();
+            } catch (err) {
+                console.error("Load Buyers Crash:", err);
+            }
+        }
+
+        // ========== BUYER ACTIVITY TRACKER ==========
+        let activityUnsub = null;
+        async function listenToBuyerActivities() {
+            if (!storeName) return;
+            
+            if (activityUnsub) {
+                await supabaseClient.removeChannel(activityUnsub);
+                activityUnsub = null;
+            }
+            
+            const container = document.getElementById('activityListContainer');
+            // Show loading state while switching
+            container.innerHTML = `<div style="text-align:center; padding: 30px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Switching seller...</div>`;
+            
+            // Initial fetch
+            const { data } = await supabaseClient.from('buyer_activities')
+                .select('*')
+                .eq('sellername', storeName)
+                .order('timestamp', { ascending: false })
+                .limit(20);
+                
+            renderActivityList(data || []);
+
+            // Subscribe to real-time changes
+            activityUnsub = supabaseClient.channel('buyer-activities-room')
+                .on('postgres_changes', { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'buyer_activities',
+                    filter: `sellername=eq.${storeName}`
+                }, payload => {
+                    console.log("New buyer activity detected!");
+                    // Fetch latest to refresh list
+                    refreshActivities();
+                });
+            
+            activityUnsub.subscribe();
+        }
+
+        async function refreshActivities() {
+            const { data } = await supabaseClient.from('buyer_activities')
+                .select('*')
+                .eq('sellername', storeName)
+                .order('timestamp', { ascending: false })
+                .limit(20);
+            renderActivityList(data || []);
+        }
+
+        function renderActivityList(activities) {
+            const container = document.getElementById('activityListContainer');
+            if (activities.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 30px; color: #94a3b8;"><i class="fas fa-walking fa-2x mb-2" style="display:block;"></i>No activity detected yet.</div>`;
+                return;
+            }
+
+            let h = '';
+            activities.forEach(a => {
+                const time = a.timestamp ? new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                const isAdd = a.action.toLowerCase().includes('added');
+                const icon = isAdd ? 'fa-cart-plus' : 'fa-trash-alt';
+                const iconColor = isAdd ? '#10b981' : '#ef4444';
+                const bgColor = isAdd ? '#ecfdf5' : '#fef2f2';
+
+                h += `
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background: ${bgColor}; color: ${iconColor};">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-user">${a.buyerid}</div>
+                            <div class="activity-text">${a.action}</div>
+                        </div>
+                        <div class="activity-time">${time}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = h;
+        }
+
+        let chatUnsub = null;
+        let messagesCurrentBuyer = [];
+
+        function renderMessagesCurrentBuyer() {
+            const area = document.getElementById('msgArea');
+            area.innerHTML = '';
+            messagesCurrentBuyer.forEach(m => {
+                const isSeller = m.sender === 'seller';
+                const side = isSeller ? 'seller' : 'buyer';
+                const name = isSeller ? (m.sellerName || 'You') : m.buyerId;
+
+                area.innerHTML += `
+                    <div class="chat-bubble bubble-${side}">
+                        <span class="bubble-meta">${name}</span>
+                        ${m.message}
+                    </div>
+                `;
+            });
+            area.scrollTop = area.scrollHeight;
+        }
+
+        async function selectBuyer(b) {
+            currentBuyer = b;
+            unreadMessages[b] = 0; // Reset unread count for this buyer
+            
+            document.getElementById('activeBuyerName').innerText = b;
+
+            document.getElementById('chatPlaceholder').style.display = 'none';
+            document.getElementById('chatMainBox').style.display = 'flex';
+
+            document.querySelectorAll('.buyer-item').forEach(el => el.classList.remove('active'));
+            // Refresh list to remove badge
+            const buyersSet = new Set();
+            document.querySelectorAll('.buyer-item span').forEach(s => buyersSet.add(s.innerText));
+            renderBuyers(buyersSet);
+
+            if (chatUnsub) await supabaseClient.removeChannel(chatUnsub);
+
+            const { data } = await supabaseClient.from('chats').select('*').eq('buyerId', b).order('timestamp', { ascending: true });
+            if (data) {
+                messagesCurrentBuyer = data.filter(m => m.sender === 'buyer' || m.sellerName === storeName);
+            }
+            renderMessagesCurrentBuyer();
+
+            chatUnsub = supabaseClient.channel(`chats-${b}`)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chats', filter: `buyerId=eq.${b}` }, payload => {
+                    const m = payload.new;
+                    if (m.sender === 'buyer' || m.sellerName === storeName) {
+                        messagesCurrentBuyer.push(m);
+                        renderMessagesCurrentBuyer();
+                    }
+                })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chats', filter: `buyerId=eq.${b}` }, payload => {
+                    messagesCurrentBuyer = messagesCurrentBuyer.filter(c => c.id !== payload.old.id);
+                    renderMessagesCurrentBuyer();
+                })
+                .subscribe();
+        }
+
+        async function sendChat() {
+            const inp = document.getElementById('chatInput');
+            const msg = inp.value.trim();
+            if (!msg || !currentBuyer) return;
+
+            ActivityTracker.log(`Sent chat phrase to ${currentBuyer}: "${msg.substring(0, 20)}..."`);
+
+            // Clear input for better experience
+            inp.value = '';
+
+            await supabaseClient.from('chats').insert([{
+                buyerId: currentBuyer,
+                sender: 'seller',
+                sellerName: storeName,
+                message: msg
+            }]);
+            inp.value = '';
+        }
+
+        // SEND OFFER MODAL LOGIC
+        let offerMode = 'catalog'; // or 'manual'
+
+        function openOfferModal() {
+            if (!currentBuyer) return alert('Select a buyer first!');
+
+            // Populate Catalog Select
+            const sel = document.getElementById('offerSelect');
+            sel.innerHTML = '<option value="">-- Choose an item --</option>';
+            // Show all products in dropdown to prevent empty list if store names mismatch during testing
+            myProducts.forEach(p => {
+                sel.innerHTML += `<option value="${p.id}">${p.items[0]} - Rp ${formatCurrency(p.basePrice)}</option>`;
+            });
+
+            document.getElementById('offerModal').style.display = 'flex';
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function switchOfferTab(mode) {
+            offerMode = mode;
+            document.getElementById('tabCatalog').classList.remove('active');
+            document.getElementById('tabManual').classList.remove('active');
+            document.getElementById('viewCatalog').style.display = 'none';
+            document.getElementById('viewManual').style.display = 'none';
+
+            if (mode === 'catalog') {
+                document.getElementById('tabCatalog').classList.add('active');
+                document.getElementById('viewCatalog').style.display = 'block';
+            } else {
+                document.getElementById('tabManual').classList.add('active');
+                document.getElementById('viewManual').style.display = 'block';
+            }
+        }
+
+        async function executeSendOffer() {
+            let data = null;
+
+            if (offerMode === 'catalog') {
+                const id = document.getElementById('offerSelect').value;
+                if (!id) return alert('Please select a product.');
+                const p = myProducts.find(x => x.id === id);
+                if (!p) return;
+
+                data = {
+                    buyerId: currentBuyer,
+                    sellerName: storeName,
+                    item: p.items[0],
+                    category: p.category,
+                    basePrice: p.basePrice,
+                    discount: p.discount || 0,
+                    imageUrl: p.imageUrl || null,
+                    videoUrl: p.videoUrl || null
+                };
+
+            } else {
+                const nm = document.getElementById('manualItemName').value.trim();
+                const pr = parseInt(document.getElementById('manualPrice').value);
+                const cat = document.getElementById('manualCategory').value;
+
+                if (!nm || !pr) return alert('Please fill item name and price.');
+
+                data = {
+                    buyerId: currentBuyer,
+                    sellerName: storeName,
+                    item: nm,
+                    category: cat,
+                    basePrice: pr,
+                    discount: 0
+                };
+            }
+
+            const { error } = await supabaseClient.from("buyer_offers").insert([data]);
+            if (error) {
+                alert(error.message);
+                return;
+            }
+
+            // Send automated chat
+            await supabaseClient.from("chats").insert([{
+                buyerId: currentBuyer,
+                sender: 'seller',
+                sellerName: storeName,
+                message: `<div style="background:rgba(255,255,255,0.2); padding:10px; border-radius:10px; margin-top:5px;"><i class="fas fa-gift text-yellow-300"></i> <b>I just sent you a special offer for ${data.item}!</b><br>Please check your Live Offers panel and click BUY NOW!</div>`
+            }]);
+
+            ActivityTracker.log(`Sent special offer to ${currentBuyer} for ${data.item} (Rp ${data.basePrice})`);
+
+            alert("Offer sent successfully!");
+            closeModal('offerModal');
+        }
+
+        async function sendFullCatalog() {
+            if (!currentBuyer || !storeName) return alert("Select a buyer first!");
+            if (myProducts.length === 0) return alert("Your catalog is empty. Add products first!");
+
+            if (!confirm(`Send all ${myProducts.length} items from your catalog to ${currentBuyer}?`)) return;
+
+            const offers = myProducts.map(p => ({
+                buyerId: currentBuyer,
+                sellerName: storeName,
+                item: p.items[0],
+                category: p.category,
+                basePrice: p.basePrice,
+                discount: p.discount,
+                imageUrl: p.imageUrl,
+                videoUrl: p.videoUrl
+            }));
+
+            const { error } = await supabaseClient.from('buyer_offers').insert(offers);
+
+            if (error) {
+                alert("Error sending catalog: " + error.message);
+            } else {
+                ActivityTracker.log(`Sent full catalog (${myProducts.length} items) to ${currentBuyer}`);
+
+                await supabaseClient.from('chats').insert([{
+                    buyerId: currentBuyer,
+                    sender: 'seller',
+                    sellerName: storeName,
+                    message: `🎁 <b>I just sent you my FULL UPDATED CATALOG (${myProducts.length} items)!</b><br>Please check your Live Offers panel to see all available products.`
+                }]);
+
+                alert(`Full catalog successfully sent to ${currentBuyer}!`);
+            }
+        }
+
+        // Initialize Buyer Activity Listening
+        window.addEventListener('load', () => {
+            if (storeName) {
+                listenToBuyerActivities();
+            }
+        });
+    </script>
+</body>
+
+</html>
